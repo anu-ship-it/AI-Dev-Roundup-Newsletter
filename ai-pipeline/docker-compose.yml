@@ -1,0 +1,7 @@
+services:
+  ai-pipeline:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src
