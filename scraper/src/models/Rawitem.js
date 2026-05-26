@@ -63,7 +63,7 @@ const RawItemSchema = new mongoose.Schema(
 );
 
 // Create an index on 'url' for faster duplicate lookups
-RawItemSchema.index({ url: 1 });
+
 
 // Create an index on 'processed' so the AI pipeline can quickly
 // find all unprocessed items
