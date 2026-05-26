@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  scraper:
+    # Build the image from our Dockerfile in the current directory
+    build: .
+
+    # Load environment variables from our .env file
+    env_file:
+      - .env
+
+    # Automatically restart the container if it crashes
+    restart: unless-stopped
+
+    # Mount our local src/ folder into the container
+    # This means code changes reflect immediately without rebuilding
+    volumes:
+      - ./src:/app/src
