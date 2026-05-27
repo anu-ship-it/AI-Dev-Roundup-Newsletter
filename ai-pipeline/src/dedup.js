@@ -1,15 +1,25 @@
-// dedup.js — Embeddings-based deduplication using Gemini
+// dedup.js — Embeddings-based deduplication using local transformers
 //
-// Same logic as before — convert each item to an embedding vector,
-// compare against items already processed this week using cosine similarity.
-// If similarity > 0.92, it's the same story — skip it.
+// Groq doesn't have an embeddings API so we use @xenova/transformers
+// which runs a tiny embedding model locally inside the container.
+// No API call, no cost, no network dependency for this step.
 
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { pipeline } = require("@xenova/transformers");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+let embedder = null;
 
-// Cosine similarity — measures how similar two vectors are
-// Returns 0 (completely different) to 1 (identical)
+// Lazy-load the embedding model on first use
+// Downloads once, cached in container layer
+async function getEmbedder() {
+  if (!embedder) {
+    console.log("  📦 Loading embedding model (first run only)...");
+    embedder = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2");
+    console.log("  ✅ Embedding model loaded");
+  }
+  return embedder;
+}
+
+// Cosine similarity — 0 (different) to 1 (identical)
 function cosineSimilarity(vecA, vecB) {
   const dot = vecA.reduce((sum, a, i) => sum + a * vecB[i], 0);
   const magA = Math.sqrt(vecA.reduce((sum, a) => sum + a * a, 0));
@@ -18,11 +28,10 @@ function cosineSimilarity(vecA, vecB) {
   return dot / (magA * magB);
 }
 
-// Get embedding for a single piece of text using Gemini
 async function getEmbedding(text) {
-  const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
-  const result = await model.embedContent(text);
-  return result.embedding.values;
+  const embed = await getEmbedder();
+  const output = await embed(text, { pooling: "mean", normalize: true });
+  return Array.from(output.data);
 }
 
 async function deduplicateItems(newItems, existingItems) {
@@ -50,7 +59,7 @@ async function deduplicateItems(newItems, existingItems) {
     for (let i = 0; i < existingEmbeddings.length; i++) {
       const similarity = cosineSimilarity(itemEmbedding, existingEmbeddings[i]);
       if (similarity > 0.92) {
-        console.log(`  ⏭️  Skipping duplicate: "${item.title.substring(0, 50)}..." (similarity: ${similarity.toFixed(3)})`);
+        console.log(`  ⏭️  Skipping duplicate: "${item.title.substring(0, 50)}..." (${similarity.toFixed(3)})`);
         isDuplicate = true;
         break;
       }
@@ -62,7 +71,7 @@ async function deduplicateItems(newItems, existingItems) {
     }
   }
 
-  console.log(`  ✅ ${uniqueItems.length} unique items passed dedup (${newItems.length - uniqueItems.length} duplicates removed)`);
+  console.log(`  ✅ ${uniqueItems.length} unique items passed dedup`);
   return uniqueItems;
 }
 
