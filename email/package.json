@@ -1,0 +1,21 @@
+{
+    "name": "ai-dev-roundup-email",
+    "version": "1.0.0",
+    "description": "Email delivery service for AI Dev Roundup Newsletter",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "node src/index.js",
+        "dev": "nodemon src/index.js"
+    },
+    "dependencies": {
+        "dotenv":"^17.4.2",
+        "mongoose":"^9.6.3",
+        "resend": "^6.12.4",
+        "@react-email/components": "^1.0.12",
+        "react": "^19.2.6",
+        "react-dom": "^19.2.6"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.14"
+    }
+}
