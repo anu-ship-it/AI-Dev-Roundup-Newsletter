@@ -4,5 +4,5 @@ services:
     env_file:
       - .env
     volumes:
-     - ./src/app/src
-     
+      - ./src:/app/src
+      
