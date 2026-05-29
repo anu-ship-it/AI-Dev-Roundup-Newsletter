@@ -6,7 +6,7 @@
 
 require("dotenv").config();
 const { Resend } = require("resend");
-const { renderAsync } = require("@react-email/components");
+const { render } = require("@react-email/render");
 const React = require("react");
 const { WeeklyDigest } = require("./templates/WeeklyDigest");
 
@@ -17,8 +17,8 @@ async function sendNewsletter(items, edition) {
   console.log(`   Items to include: ${items.length}`);
 
   // Step 1: Render the React Email template to HTML string
-  // renderAsync converts JSX → valid HTML that works in all email clients
-  const html = await renderAsync(
+  // render converts JSX → valid HTML that works in all email clients
+  const html = await render(
     React.createElement(WeeklyDigest, {
       items,
       edition,
