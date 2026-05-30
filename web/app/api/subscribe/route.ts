@@ -4,8 +4,8 @@
 // Returns 200 on success, 409 if already subscribed, 400 on bad input.
 
 import { NextRequest, NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Subscriber from "@/lib/models/Subscriber";
+import connectDB from "../../lib/mongodb";
+import Subscriber from "../../lib/models/Subscriber";
 
 export async function POST(req: NextRequest) {
   try {

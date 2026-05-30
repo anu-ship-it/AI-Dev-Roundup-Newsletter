@@ -67,7 +67,7 @@ export default function Home() {
 
           <p className="text-base text-gray-500 leading-relaxed max-w-sm">
             Written for engineers building real products.
-            No opinion pieces, no hype, no "top 10 AI tools" lists.
+            No opinion pieces, no hype, no &quot;top 10 AI tools&quot; lists.
           </p>
 
           {/* Stats row */}
