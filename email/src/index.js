@@ -2,16 +2,17 @@
 //
 // 1. Connects to MongoDB
 // 2. Fetches processed items for current week that haven't been sent
-// 3. Renders and sends the newsletter via Resend
-// 4. Marks items as sent: true so they don't get sent again
+// 3. Fetches all active subscribers
+// 4. Sends the newsletter to each subscriber individually
+// 5. Marks items as sent: true
 
 require("dotenv").config();
 
 const { connectDB, disconnectDB } = require("./db");
 const ProcessedItem = require("./models/ProcessedItem");
+const Subscriber = require("./models/Subscriber");
 const { sendNewsletter } = require("./sender");
 
-// Get current week in "YYYY-Www" format — must match ai-pipeline
 function getCurrentWeek() {
   const now = new Date();
   const startOfYear = new Date(now.getFullYear(), 0, 1);
@@ -30,8 +31,7 @@ async function main() {
     const currentWeek = getCurrentWeek();
     console.log(`📅 Sending newsletter for week: ${currentWeek}`);
 
-    // Fetch processed items for this week that haven't been sent yet
-    // Sort by relevance score — highest first
+    // Fetch unsent processed items for this week
     const items = await ProcessedItem.find({
       newsletterEdition: currentWeek,
       sent: false,
@@ -46,11 +46,35 @@ async function main() {
       return;
     }
 
-    // Send the newsletter
-    const emailId = await sendNewsletter(items, currentWeek);
+    // Fetch all active subscribers
+    const subscribers = await Subscriber.find({ subscribed: true }).lean();
+    console.log(`👥 Found ${subscribers.length} active subscribers\n`);
 
-    // Mark all sent items as sent: true
-    // This prevents duplicate sends if this service runs again
+    if (subscribers.length === 0) {
+      console.log("No active subscribers yet. Share your signup page!");
+      return;
+    }
+
+    // Send to each subscriber individually
+    let sent = 0;
+    let failed = 0;
+
+    for (const subscriber of subscribers) {
+      try {
+        await sendNewsletter(items, currentWeek, subscriber);
+        console.log(`  ✅ Sent to ${subscriber.email}`);
+        sent++;
+      } catch (err) {
+        console.error(`  ❌ Failed to send to ${subscriber.email}: ${err.message}`);
+        failed++;
+      }
+
+      // Small delay between sends — avoids hitting Resend rate limits
+      // Resend free tier: 2 emails/second
+      await new Promise((r) => setTimeout(r, 500));
+    }
+
+    // Mark all items as sent
     const itemIds = items.map((i) => i._id);
     await ProcessedItem.updateMany(
       { _id: { $in: itemIds } },
@@ -60,8 +84,8 @@ async function main() {
     console.log(`\n── Email Summary ─────────────────────────`);
     console.log(`  ✅ Newsletter sent     : ${currentWeek}`);
     console.log(`  📧 Items included      : ${items.length}`);
-    console.log(`  🆔 Resend email ID     : ${emailId}`);
-    console.log(`  📮 Sent to             : ${process.env.TO_EMAIL}`);
+    console.log(`  👥 Subscribers reached : ${sent}`);
+    console.log(`  ❌ Failed sends        : ${failed}`);
     console.log(`──────────────────────────────────────────\n`);
 
   } catch (err) {

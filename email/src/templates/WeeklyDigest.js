@@ -1,8 +1,7 @@
-// WeeklyDigest.js — Plain HTML email template
-// No React, no JSX, no rendering issues.
-// Generates a valid HTML string directly.
+function buildWeeklyDigest({ items = [], edition = "", newsletterName = "AI Dev Roundup", subscriberName = "", unsubscribeToken = "" }) {
+  const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+  const unsubscribeUrl = `${baseUrl}/api/unsubscribe?token=${unsubscribeToken}`;
 
-function buildWeeklyDigest({ items = [], edition = "", newsletterName = "AI Dev Roundup" }) {
   const itemsHtml = items.map((item, index) => `
     <tr>
       <td style="padding: 0 40px;">
@@ -18,6 +17,8 @@ function buildWeeklyDigest({ items = [], edition = "", newsletterName = "AI Dev 
       </td>
     </tr>
   `).join("");
+
+  const greeting = subscriberName ? `Hi ${subscriberName.split(" ")[0]},` : "Hi,";
 
   return `<!DOCTYPE html>
 <html>
@@ -40,11 +41,12 @@ function buildWeeklyDigest({ items = [], edition = "", newsletterName = "AI Dev 
             </td>
           </tr>
 
-          <!-- Intro -->
+          <!-- Greeting -->
           <tr>
             <td style="padding:24px 40px 0;">
+              <p style="color:#475569;font-size:15px;line-height:24px;margin:0 0 8px;">${greeting}</p>
               <p style="color:#475569;font-size:15px;line-height:24px;margin:0;">
-                The highest-signal AI and developer content from this week, curated and summarized for engineers building real products.
+                Here's your weekly roundup of the highest-signal AI and developer content — curated and summarized for engineers building real products.
               </p>
             </td>
           </tr>
@@ -72,11 +74,14 @@ function buildWeeklyDigest({ items = [], edition = "", newsletterName = "AI Dev 
               <p style="color:#94a3b8;font-size:12px;line-height:18px;margin:0 0 4px;">
                 You're receiving this because you subscribed to ${newsletterName}.
               </p>
-              <p style="color:#94a3b8;font-size:12px;line-height:18px;margin:0;">
+              <p style="color:#94a3b8;font-size:12px;line-height:18px;margin:0 0 4px;">
                 Built with Node.js, MongoDB, Groq, and Resend.
               </p>
-              <p style="color:#94a3b8;font-size:12px;line-height:18px;margin:0;">
-                Built By Anoop Kumar.
+              <p style="color:#94a3b8;font-size:12px;line-height:18px;margin:0 0 4px;">
+                Built by Anoop Kumar.
+              </p>
+              <p style="color:#94a3b8;font-size:12px;line-height:18px;margin:8px 0 0;">
+                <a href="${unsubscribeUrl}" style="color:#94a3b8;text-decoration:underline;">Unsubscribe</a>
               </p>
             </td>
           </tr>
