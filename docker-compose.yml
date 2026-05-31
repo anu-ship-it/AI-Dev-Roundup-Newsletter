@@ -1,0 +1,60 @@
+# Root docker-compose.yml
+# Runs the full pipeline: scraper → ai-pipeline → email
+# For local development and testing the complete flow.
+#
+# Usage:
+#   Run full pipeline once:
+#     docker-compose up
+#
+#   Run scheduler (automated weekly):
+#     docker-compose --profile scheduler up
+#
+#   Run individual service:
+#     docker-compose run scraper
+#     docker-compose run ai-pipeline
+#     docker-compose run email
+
+services:
+
+  # ── Step 1: Scraper ──────────────────────────────────
+  scraper:
+    build: ./scraper
+    env_file:
+      - ./scraper/.env
+    volumes:
+      - ./scraper/src:/app/src
+
+  # ── Step 2: AI Pipeline ───────────────────────────────
+  ai-pipeline:
+    build: ./ai-pipeline
+    env_file:
+      - ./ai-pipeline/.env
+    volumes:
+      - ./ai-pipeline/src:/app/src
+    depends_on:
+      - scraper
+
+  # ── Step 3: Email ─────────────────────────────────────
+  email:
+    build: ./email
+    env_file:
+      - ./email/.env
+    volumes:
+      - ./email/src:/app/src
+    depends_on:
+      - ai-pipeline
+
+  # ── Scheduler (optional) ──────────────────────────────
+  # Runs continuously and triggers the full pipeline on schedule.
+  # Start with: docker-compose --profile scheduler up scheduler
+  scheduler:
+    profiles: ["scheduler"]
+    build: ./scraper
+    env_file:
+      - ./scraper/.env
+    volumes:
+      - ./scraper/src:/app/src
+      - ./ai-pipeline/src:/app/ai-pipeline/src
+      - ./email/src:/app/email/src
+    command: node src/scheduler.js
+    restart: unless-stopped
