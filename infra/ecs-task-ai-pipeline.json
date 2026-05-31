@@ -1,21 +1,21 @@
 {
-  "family": "ai-dev-roundup-scraper",
+  "family": "ai-dev-roundup-ai-pipeline",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
-  "cpu": "256",
-  "memory": "512",
+  "cpu": "512",
+  "memory": "1024",
   "executionRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskExecutionRole",
   "containerDefinitions": [
     {
-      "name": "scraper",
-      "image": "YOUR_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/ai-dev-roundup/scraper:latest",
+      "name": "ai-pipeline",
+      "image": "YOUR_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/ai-dev-roundup/ai-pipeline:latest",
       "essential": true,
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/ai-dev-roundup",
           "awslogs-region": "ap-south-1",
-          "awslogs-stream-prefix": "scraper"
+          "awslogs-stream-prefix": "ai-pipeline"
         }
       },
       "secrets": [
@@ -26,6 +26,14 @@
         {
           "name": "DB_NAME",
           "valueFrom": "arn:aws:ssm:ap-south-1:YOUR_ACCOUNT_ID:parameter/ai-dev-roundup/DB_NAME"
+        },
+        {
+          "name": "GROQ_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:YOUR_ACCOUNT_ID:parameter/ai-dev-roundup/GROQ_API_KEY"
+        },
+        {
+          "name": "MIN_RELEVANCE_SCORE",
+          "valueFrom": "arn:aws:ssm:ap-south-1:YOUR_ACCOUNT_ID:parameter/ai-dev-roundup/MIN_RELEVANCE_SCORE"
         }
       ]
     }
