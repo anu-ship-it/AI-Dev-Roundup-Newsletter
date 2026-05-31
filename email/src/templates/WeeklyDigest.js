@@ -1,203 +1,92 @@
-// WeeklyDigest.jsx — React Email template
-//
-// React Email lets you write email templates in JSX.
-// It compiles to plain HTML that renders correctly across all email clients.
-// No CSS-in-JS issues, no Gmail clipping, no Outlook breakage.
+// WeeklyDigest.js — Plain HTML email template
+// No React, no JSX, no rendering issues.
+// Generates a valid HTML string directly.
 
-const React = require("react");
-const {
-  Html,
-  Head,
-  Body,
-  Container,
-  Section,
-  Text,
-  Link,
-  Hr,
-  Preview,
-  Heading,
-} = require("@react-email/components");
+function buildWeeklyDigest({ items = [], edition = "", newsletterName = "AI Dev Roundup" }) {
+  const itemsHtml = items.map((item, index) => `
+    <tr>
+      <td style="padding: 0 40px;">
+        <p style="color:#94a3b8;font-size:11px;font-weight:600;letter-spacing:0.08em;margin:0 0 6px;text-transform:uppercase;">
+          ${item.source.replace(/_/g, " ").toUpperCase()} · Score ${item.relevanceScore}/10
+        </p>
+        <h2 style="font-size:18px;font-weight:600;margin:0 0 10px;line-height:1.3;">
+          <a href="${item.url}" style="color:#0f172a;text-decoration:none;">${item.title}</a>
+        </h2>
+        <p style="color:#475569;font-size:14px;line-height:22px;margin:0 0 12px;white-space:pre-line;">${item.summary}</p>
+        <a href="${item.url}" style="color:#3b82f6;font-size:13px;font-weight:500;text-decoration:none;">Read more →</a>
+        ${index < items.length - 1 ? '<hr style="border:none;border-top:1px solid #f1f5f9;margin:24px 0;" />' : ""}
+      </td>
+    </tr>
+  `).join("");
 
-function WeeklyDigest({ items = [], edition = "", newsletterName = "AI Dev Roundup" }) {
-  const previewText = `${items.length} high-signal items for developers building with AI`;
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${newsletterName}</title>
+</head>
+<body style="background-color:#f6f9fc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:0;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:40px 0;">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;max-width:600px;width:100%;">
 
-  return React.createElement(
-    Html,
-    null,
-    React.createElement(Head, null),
-    React.createElement(Preview, null, previewText),
-    React.createElement(
-      Body,
-      { style: styles.body },
-      React.createElement(
-        Container,
-        { style: styles.container },
+          <!-- Header -->
+          <tr>
+            <td style="background:#0f172a;padding:32px 40px;border-radius:8px 8px 0 0;">
+              <h1 style="color:#ffffff;font-size:28px;font-weight:700;margin:0 0 8px;">${newsletterName}</h1>
+              <p style="color:#94a3b8;font-size:14px;margin:0;">Edition ${edition} · ${items.length} items</p>
+            </td>
+          </tr>
 
-        // ── Header ──
-        React.createElement(
-          Section,
-          { style: styles.header },
-          React.createElement(Heading, { style: styles.headerTitle }, newsletterName),
-          React.createElement(Text, { style: styles.headerSubtitle }, `Edition ${edition} · ${items.length} items`)
-        ),
+          <!-- Intro -->
+          <tr>
+            <td style="padding:24px 40px 0;">
+              <p style="color:#475569;font-size:15px;line-height:24px;margin:0;">
+                The highest-signal AI and developer content from this week, curated and summarized for engineers building real products.
+              </p>
+            </td>
+          </tr>
 
-        // ── Intro ──
-        React.createElement(
-          Section,
-          { style: styles.section },
-          React.createElement(
-            Text,
-            { style: styles.intro },
-            "The highest-signal AI and developer content from this week, curated and summarized for engineers building real products."
-          )
-        ),
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 40px;">
+              <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
+            </td>
+          </tr>
 
-        React.createElement(Hr, { style: styles.divider }),
+          <!-- Items -->
+          ${itemsHtml}
 
-        // ── Items ──
-        items.map((item, index) =>
-          React.createElement(
-            Section,
-            { key: index, style: styles.itemSection },
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 40px;">
+              <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
+            </td>
+          </tr>
 
-            // Score badge + title
-            React.createElement(
-              Text,
-              { style: styles.itemMeta },
-              `${item.source.replace("_", " ").toUpperCase()} · Score ${item.relevanceScore}/10`
-            ),
+          <!-- Footer -->
+          <tr>
+            <td style="padding:0 40px 40px;">
+              <p style="color:#94a3b8;font-size:12px;line-height:18px;margin:0 0 4px;">
+                You're receiving this because you subscribed to ${newsletterName}.
+              </p>
+              <p style="color:#94a3b8;font-size:12px;line-height:18px;margin:0;">
+                Built with Node.js, MongoDB, Groq, and Resend.
+              </p>
+              <p style="color:#94a3b8;font-size:12px;line-height:18px;margin:0;">
+                Built By Anoop Kumar.
+              </p>
+            </td>
+          </tr>
 
-            React.createElement(
-              Heading,
-              { as: "h2", style: styles.itemTitle },
-              React.createElement(Link, { href: item.url, style: styles.itemLink }, item.title)
-            ),
-
-            // AI-generated summary
-            React.createElement(Text, { style: styles.itemSummary }, item.summary),
-
-            React.createElement(
-              Link,
-              { href: item.url, style: styles.readMore },
-              "Read more →"
-            ),
-
-            index < items.length - 1
-              ? React.createElement(Hr, { style: styles.itemDivider })
-              : null
-          )
-        ),
-
-        React.createElement(Hr, { style: styles.divider }),
-
-        // ── Footer ──
-        React.createElement(
-          Section,
-          { style: styles.footer },
-          React.createElement(
-            Text,
-            { style: styles.footerText },
-            `You're receiving this because you subscribed to ${newsletterName}.`
-          ),
-          React.createElement(
-            Text,
-            { style: styles.footerText },
-            "Built with Node.js, MongoDB, Groq, and Resend."
-          )
-        )
-      )
-    )
-  );
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 }
 
-const styles = {
-  body: {
-    backgroundColor: "#f6f9fc",
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  },
-  container: {
-    backgroundColor: "#ffffff",
-    margin: "0 auto",
-    padding: "20px 0 48px",
-    marginBottom: "64px",
-    maxWidth: "600px",
-  },
-  header: {
-    backgroundColor: "#0f172a",
-    padding: "32px 40px",
-    borderRadius: "8px 8px 0 0",
-  },
-  headerTitle: {
-    color: "#ffffff",
-    fontSize: "28px",
-    fontWeight: "700",
-    margin: "0 0 8px",
-  },
-  headerSubtitle: {
-    color: "#94a3b8",
-    fontSize: "14px",
-    margin: "0",
-  },
-  section: {
-    padding: "24px 40px 0",
-  },
-  intro: {
-    color: "#475569",
-    fontSize: "15px",
-    lineHeight: "24px",
-    margin: "0",
-  },
-  divider: {
-    borderColor: "#e2e8f0",
-    margin: "24px 40px",
-  },
-  itemSection: {
-    padding: "0 40px",
-  },
-  itemMeta: {
-    color: "#94a3b8",
-    fontSize: "11px",
-    fontWeight: "600",
-    letterSpacing: "0.08em",
-    margin: "0 0 6px",
-    textTransform: "uppercase",
-  },
-  itemTitle: {
-    fontSize: "18px",
-    fontWeight: "600",
-    margin: "0 0 10px",
-    lineHeight: "1.3",
-  },
-  itemLink: {
-    color: "#0f172a",
-    textDecoration: "none",
-  },
-  itemSummary: {
-    color: "#475569",
-    fontSize: "14px",
-    lineHeight: "22px",
-    margin: "0 0 12px",
-    whiteSpace: "pre-line",
-  },
-  readMore: {
-    color: "#3b82f6",
-    fontSize: "13px",
-    fontWeight: "500",
-    textDecoration: "none",
-  },
-  itemDivider: {
-    borderColor: "#f1f5f9",
-    margin: "24px 0",
-  },
-  footer: {
-    padding: "0 40px",
-  },
-  footerText: {
-    color: "#94a3b8",
-    fontSize: "12px",
-    lineHeight: "18px",
-    margin: "0 0 4px",
-  },
-};
-
-module.exports = { WeeklyDigest };
+module.exports = { buildWeeklyDigest };
