@@ -55,7 +55,7 @@ function WeeklyDigest({ items = [], edition = "", newsletterName = "AI Dev Round
         React.createElement(Hr, { style: styles.divider }),
 
         // ── Items ──
-        ...items.map((item, index) =>
+        items.map((item, index) =>
           React.createElement(
             Section,
             { key: index, style: styles.itemSection },
