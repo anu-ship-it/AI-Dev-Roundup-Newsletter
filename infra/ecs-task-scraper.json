@@ -4,11 +4,11 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "executionRoleArn": "arn:aws:iam::126458880561:role/ecsTaskExecutionRole",
   "containerDefinitions": [
     {
       "name": "scraper",
-      "image": "YOUR_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/ai-dev-roundup/scraper:latest",
+      "image": "126458880561.dkr.ecr.ap-south-1.amazonaws.com/ai-dev-roundup/scraper:latest",
       "essential": true,
       "logConfiguration": {
         "logDriver": "awslogs",
@@ -21,11 +21,11 @@
       "secrets": [
         {
           "name": "MONGODB_URI",
-          "valueFrom": "arn:aws:ssm:ap-south-1:YOUR_ACCOUNT_ID:parameter/ai-dev-roundup/MONGODB_URI"
+          "valueFrom": "arn:aws:ssm:ap-south-1:126458880561:parameter/ai-dev-roundup/MONGODB_URI"
         },
         {
           "name": "DB_NAME",
-          "valueFrom": "arn:aws:ssm:ap-south-1:YOUR_ACCOUNT_ID:parameter/ai-dev-roundup/DB_NAME"
+          "valueFrom": "arn:aws:ssm:ap-south-1:126458880561:parameter/ai-dev-roundup/DB_NAME"
         }
       ]
     }
