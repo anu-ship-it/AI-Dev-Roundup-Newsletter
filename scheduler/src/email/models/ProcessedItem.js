@@ -20,4 +20,4 @@ const ProcessedItemSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("ProcessedItem", ProcessedItemSchema);
+module.exports = mongoose.models.ProcessedItem || mongoose.model("ProcessedItem", ProcessedItemSchema);

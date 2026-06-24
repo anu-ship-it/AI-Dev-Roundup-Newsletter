@@ -70,4 +70,4 @@ const RawItemSchema = new mongoose.Schema(
 RawItemSchema.index({ processed: 1 });
 
 // Export the model — "RawItem" becomes the collection name "rawitems" in MongoDB
-module.exports = mongoose.model("RawItem", RawItemSchema);
+module.exports = mongoose.models.RawItem || mongoose.model("RawItem", RawItemSchema);
