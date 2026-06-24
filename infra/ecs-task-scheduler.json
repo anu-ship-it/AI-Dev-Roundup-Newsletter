@@ -1,0 +1,57 @@
+{
+  "family": "ai-dev-roundup-scheduler",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::126458880561:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "scheduler",
+      "image": "126458880561.dkr.ecr.ap-south-1.amazonaws.com/ai-dev-roundup/scheduler:latest",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ai-dev-roundup",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "scheduler"
+        }
+      },
+      "secrets": [
+        {
+          "name": "MONGODB_URI",
+          "valueFrom": "arn:aws:ssm:ap-south-1:126458880561:parameter/ai-dev-roundup/MONGODB_URI"
+        },
+        {
+          "name": "DB_NAME",
+          "valueFrom": "arn:aws:ssm:ap-south-1:126458880561:parameter/ai-dev-roundup/DB_NAME"
+        },
+        {
+          "name": "GROQ_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:126458880561:parameter/ai-dev-roundup/GROQ_API_KEY"
+        },
+        {
+          "name": "MIN_RELEVANCE_SCORE",
+          "valueFrom": "arn:aws:ssm:ap-south-1:126458880561:parameter/ai-dev-roundup/MIN_RELEVANCE_SCORE"
+        },
+        {
+          "name": "RESEND_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-south-1:126458880561:parameter/ai-dev-roundup/RESEND_API_KEY"
+        },
+        {
+          "name": "FROM_EMAIL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:126458880561:parameter/ai-dev-roundup/FROM_EMAIL"
+        },
+        {
+          "name": "NEWSLETTER_NAME",
+          "valueFrom": "arn:aws:ssm:ap-south-1:126458880561:parameter/ai-dev-roundup/NEWSLETTER_NAME"
+        },
+        {
+          "name": "BASE_URL",
+          "valueFrom": "arn:aws:ssm:ap-south-1:126458880561:parameter/ai-dev-roundup/BASE_URL"
+        }
+      ]
+    }
+  ]
+}
