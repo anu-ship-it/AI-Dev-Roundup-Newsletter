@@ -10,6 +10,9 @@ const mongoose = require("mongoose");
 const { connectDB, disconnectDB } = require("./db");
 const RawItem = require("./models/RawItem");
 const { scrapeGithubTrending } = require("./scrapers/githubTrending");
+const { scrapeHackerNews } = require("./scrapers/hackerNews");
+const { scrapeArvix } = require("./scrapers/Arxiv");
+const { scrapeDevTo } = require("./scrapers/Devto");
 
 async function saveItems(items) {
   let saved = 0;
@@ -25,7 +28,7 @@ async function saveItems(items) {
       if (result.upsertedCount === 1) saved++;
       else skipped++;
     } catch (err) {
-      console.error(`Failed to save item: ${item.url}`, err.message);
+      console.error(`❌ Failed to save item: ${item.url}`, err.message);
     }
   }
 
@@ -33,16 +36,31 @@ async function saveItems(items) {
 }
 
 async function runScraper() {
-  console.log("\nStarting AI Dev Roundup Scraper...");
+  console.log("\n🚀 Starting AI Dev Roundup Scraper...");
 
   await connectDB();
 
   try {
+   const [github, hn, arvix, devto] = await Promise.allSettled([
+      scrapeGithubTrending(),
+      scrapeHackerNews(),
+      scrapeArvix(),
+      scrapeDevTo(),
+    ]);
+
     const allItems = [
-      ...(await scrapeGithubTrending()),
+      ...(github.status === "fulfilled" ? github.value : []),
+      ...(hn.status === "fulfilled" ? hn.value : []),
+      ...(arvix.status === "fulfilled" ? arvix.value : []),
+      ...(devto.status === "fulfilled" ? devto.value : []),
     ];
 
-    console.log(`Total items scraped: ${allItems.length}`);
+    if (github.status === "rejected") console.error("GitHub scraper failed:", github.reason?.message);
+    if (hn.status === "rejected") console.error("HN scraper failed:", hn.reason?.message);
+    if (arvix.status === "rejected") console.error("arViv scraper failed:", arvix.reason?.message);
+    if (devto.status === "rejected") console.error("Dev.to scraper failed:", devto.reason?.message);
+
+    console.log(`📦 Total items scraped: ${allItems.length}`);
 
     const { saved, skipped } = await saveItems(allItems);
 

@@ -12,6 +12,9 @@ require("dotenv").config();
 const { connectDB, disconnectDB } = require("./db");
 const RawItem = require("./models/RawItem");
 const { scrapeGithubTrending } = require("./scrapers/githubTrending");
+const { scrapeHackerNews } = require("./scrapers/hackerNews");
+const { scrapeArvix } = require("./scrapers/Arxiv");
+const { scrapeDevTo } = require("./scrapers/Devto");
 
 // saveItems() takes the array of scraped items and stores them in MongoDB.
 // It uses "upsert" logic: if a URL already exists, skip it.
@@ -58,11 +61,24 @@ async function main() {
     // Step 2: Run all scrapers
     // Right now we only have GitHub Trending.
     // When we add HN, arXiv etc., we add them here.
+    const [github, hn, arvix, devto] = await Promise.allSettled([
+      scrapeGithubTrending(),
+      scrapeHackerNews(),
+      scrapeArvix(),
+      scrapeDevTo(),
+    ]);
+
     const allItems = [
-      ...(await scrapeGithubTrending()),
-      // ...(await scrapeHackerNews()),   ← we'll add these later
-      // ...(await scrapeArxiv()),
+      ...(github.status === "fulfilled" ? github.value : []),
+      ...(hn.status === "fulfilled" ? hn.value : []),
+      ...(arvix.status === "fulfilled" ? arvix.value : []),
+      ...(devto.status === "fulfilled" ? devto.value : []),
     ];
+
+    if (github.status === "rejected") console.error("GitHub scraper failed:", github.reason?.message);
+    if (hn.status === "rejected") console.error("HN scraper failed:", hn.reason?.message);
+    if (arvix.status === "rejected") console.error("arViv scraper failed:", arvix.reason?.message);
+    if (devto.status === "rejected") console.error("Dev.to scraper failed:", devto.reason?.message);
 
     console.log(`\n📦 Total items scraped: ${allItems.length}`);
 
