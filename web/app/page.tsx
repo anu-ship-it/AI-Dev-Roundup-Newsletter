@@ -49,8 +49,176 @@ export default function Home() {
   ];
 
   const tagColors: Record<string, string> = {
-    
-  }
+    TOOL: "#C8F135",
+    REPO: "#6B7280",
+    RESEARCH: "#A78BFA",
+    RELEASE: "#F87171",
+    TUTORIAL: "#34D399",
+  };
+
+  return (
+    <>
+     <style>
+      {`
+       @import url('https://fonts.googleapis.com/css2?
+       family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap');
+
+       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+       body {
+        background: #0A0A0A;
+        color: #F5F5F0;
+        font-family: 'Inter', sans-serif;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+       }
+
+       .mono { font-family: 'JetBrains Mono', monospace; }
+
+       .page {
+          max-width: 1100px;
+          margin: 0 auto;
+          padding: 0 24px;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+       }
+
+      /* NAV */
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: spae-between;
+        padding: 28px 0 0;
+        border-bottom: 1px solid #1E1E1E;
+        padding-bottom: 20px;
+      }
+        .nav-brand { font-size: 13px; color: #6B7280; letter-spacing: 0.08em; }
+        .nav-issue {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 11px;
+          color: #4B5563;
+          letter-spacing: 0.05em;
+        }
+
+        /* HERO */
+        .hero {
+          flex: 1;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 80px;
+          align-items: start;
+          padding: 64px 0 80px;
+        }
+
+        @media (max-width: 768px) {
+          .hero { grid-template-columns: 1fr; gap; 48px; }
+        }
+
+        /* LEFT */
+        .left {}
+
+        .eyebrow {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 11px;
+          color: #485563;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          margin-buttom: 24px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .eyebrow-dot {
+          width: 6px; height: 6px;
+          background: #C8F135;
+          border-radius: 50%;
+        }
+
+        .masthead {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: clamp(32px, 5vw, 52px);
+          font-weight: 700;
+          line-height: 1.1;
+          color: #F8F5F0;
+          margin-bottom: 8px;
+          letter-spacing: -0.02em;
+        }
+          .masthead-prompt { color: #C8F135; }
+          .masthead-cursor {
+            display: inline-block;
+            width: 3px;
+            height: 1em;
+            background: #C8F135;
+            vertical-align: middle;
+            margin-left: 4px;
+            transition: opacity 0.1s;
+          }
+
+          .tagline {
+            font-size: 16px;
+            color: #9CA3AF;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            max-width: 420px;
+          }
+          .tagline strong { color: #E8E4DC; font-weight: 500; }
+          
+          /* FORM */
+          .form-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #4B5563;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+          }
+
+          .form-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+          }
+
+          @media (max-width: 520px) {
+            .form-row { flex-direction: column; }
+          }
+
+          .input {
+            flex: 1;
+            background: #111111;
+            border: 1px solid #2A2A2A;
+            color: #F5F5F0;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            padding: 12px 16px;
+            outline: none;
+            transition: border-color 0.15s;
+            border-radius: 0;
+            -webkit-appearance: none;
+          }
+           .input::placeholder { color: #3D3D3D; }
+           .input:focus { border-color: #C8F135; }
+           
+           .btn {
+            background: #C8F135;
+            color: #0A0A0A;
+            border: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            padding: 12px 24px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.15s, opacity 0.15s;
+            border-radius: 0;
+           }
+           .btn:hover { background: #D4F547; } 
+      `}
+     </style>
+    </>
+  )
 
   return (
     <main className="min-h-screen bg-white">
