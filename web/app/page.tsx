@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { title } from "process";
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const [name, setName] = useState("");
@@ -9,7 +10,11 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [cursor, setCursor] = useState(true);
 
-  
+  // Blinking cursor effect
+  useEffect(() => {
+    const interval = setInterval(() => setCursor((c) => !c), 530);
+    return () => clearInterval(interval);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,6 +39,17 @@ export default function Home() {
       setStatus("error");
       setMessage("Something went wrong. Please try again.");
     }
+  }
+
+  const picks = [
+    { tag: "TOOL", score: "9/10", title: "bytedance / deer-flow", desc: "Open-source SuperAgent harness for long-horizon AI tasks." },
+    { tag: "REPO", score: "8/10", title: "alibaba / open-code-review", desc: "LLM-powered code review with deterministic pipelines." },
+    { tag: "RESEARCH", score: "9/10", title: "DeusData / codebase-memory-mcp", desc: "Indexes codebases into a persistent knowledge graph." },
+    { tag: "TOOL", score: "8/10", title: "supermemoryai / supermemory", desc: "Memory engine and API for AI applications." },
+  ];
+
+  const tagColors: Record<string, string> = {
+    
   }
 
   return (
