@@ -214,9 +214,156 @@ export default function Home() {
             transition: background 0.15s, opacity 0.15s;
             border-radius: 0;
            }
-           .btn:hover { background: #D4F547; } 
-      `}
-     </style>
+           .btn:hover { background: #D4F547; }
+           .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+           
+           .form-note {
+              font-size: 12px;
+              color: #3D3D3D;
+              margin-top: 10px;
+           }
+
+           .form-error { color: #F87171; font-size: 13px; margin-top: 8px; }
+
+           .success-state { padding: 24px 0; }
+           .success-title {
+              font-family: 'JetBrains Mono', monospae;
+              font-size: 18px;
+              color: #C8F135;
+              margin-bottom: 8px;
+           }
+            .success-body { font-size: 14px; color: #9CA3AF; }
+            
+            /* STATS */
+            .stats {
+              display: flex;
+              gap: 32px;
+              margin-top: 40px;
+              padding-top: 32px;
+              border-top: 1px solid #1A1A1A;
+            }
+            .stat-value {
+              font-family: 'JetBrains Mono', monospace;
+              font-size: 20px;
+              font-weight: 700;
+              color: #F5F5F0;
+            }
+            .stat-label {
+              font-size: 11px;
+              color: #485563;
+              text-transform: uppercase;
+              letter-spacing: 0.08em;
+              margin-top: 2px;
+            }
+
+            /* RIGHT - PICKS */
+            .right {}
+
+            .picks-header {
+              font-family: 'JetBrains Mono', monospace;
+              font-size: 10px;
+              color: #3D3D3D;
+              letter-spacing: 0.15em;
+              text-transform: uppercase;
+              margin-bottom: 16px;
+              padding-bottom: 12px;
+              border-bottom: 1px solid #1A1A1A;
+            }
+
+            .pick {
+              padding: 16px 0;
+              border-bottom: 1px solid #141414;
+            }
+            .pick:ladt-child { border-bottom: none; }
+            
+            .pick-meta {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              margin-bottom: 6px;
+            }
+
+            .pick-tag {
+              font-family: 'JetBrains Mono', monospace;
+              font-size: 9px;
+              font-weight: 700;
+              letter-spacing: 0.12em;
+              padding: 2px 6px;
+            }
+
+            .pick-score {
+              font-family: 'JetBrains Mono', monospace;
+              font-size: 10px;
+              color: #485563;
+            }
+
+            .pick-title {
+              font-size: 13px;
+              font-weight: 600;
+              color: #E8E4DC;
+              margin-bottom: 4px;
+              line-height: 1.3;
+            }
+
+            .pick-desc {
+              font-size: 12px;
+              color: #6B7280;
+              line-height: 1.5;
+            }
+
+            .picks-footer {
+              margin-top: 20px;
+              font-family: 'JetBrains Mono', monospace;
+              font-size: 10px;
+              color: #2A2A2A;
+              letter-spacing: 0.08em;
+            }
+
+            /* FOOTER */
+            .footer {
+              border-top: 1px solid #1A1A1A;
+              padding: 24px 0;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+            }
+            .footer-left {
+              font-family: 'JetBrains Mono', monospace;
+              font-size: 11px;
+              color: #2A2A2A;
+            }
+            .footer-right { font-size: 11px; color: #2A2A2A; }  
+      `}</style>
+
+      <div className="page">
+        {/* NAV */}
+        <nav className="nav">
+          <span className="nav-brand mono">AI DEV ROUNDUP</span>
+          <span className="nav-issue">by Anoop · Every Sunday</span>
+        </nav>
+
+        {/* HERO */}
+        <div className="hero">
+          {/* LEFT */}
+          <div className="left">
+            <div className="eyebrow">
+              <span className="eyebrow-dot" />
+              Weekly · AI · Developer Intelligence 
+            </div>
+
+            <h1 className="masthead">
+              <span className="masthead-prompt">&gt: </span>
+              AI Dev<br />Roundup
+              <span
+                className="masthead-cursor"
+                style={{ opacity: cursor ? 1 : 0 }}
+              />
+            </h1>
+
+            <p></p>
+          </div>
+        </div>
+      </div>
     </>
   )
 
