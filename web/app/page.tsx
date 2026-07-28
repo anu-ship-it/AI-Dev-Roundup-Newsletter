@@ -1,6 +1,5 @@
 "use client";
 
-import { title } from "process";
 import { useEffect, useState } from "react";
 
 export default function Home() {
