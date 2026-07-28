@@ -7,6 +7,9 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [cursor, setCursor] = useState(true);
+
+  
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
