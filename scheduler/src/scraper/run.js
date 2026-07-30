@@ -44,7 +44,7 @@ async function runScraper() {
    const [github, hn, arvix, devto] = await Promise.allSettled([
       scrapeGithubTrending(),
       scrapeHackerNews(),
-      scrapeArvix(),
+      scrapeArxiv(),
       scrapeDevTo(),
     ]);
 

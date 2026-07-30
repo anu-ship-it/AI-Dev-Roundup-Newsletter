@@ -13,8 +13,8 @@ const { connectDB, disconnectDB } = require("./db");
 const RawItem = require("./models/RawItem");
 const { scrapeGithubTrending } = require("./scrapers/githubTrending");
 const { scrapeHackerNews } = require("./scrapers/hackerNews");
-const { scrapeArvix } = require("./scrapers/Arxiv");
-const { scrapeDevTo } = require("./scrapers/Devto");
+const { scrapeArvix, scrapeArxiv } = require("./scrapers/arxiv");
+const { scrapeDevTo } = require("./scrapers/devto");
 
 // saveItems() takes the array of scraped items and stores them in MongoDB.
 // It uses "upsert" logic: if a URL already exists, skip it.
@@ -64,7 +64,7 @@ async function main() {
     const [github, hn, arvix, devto] = await Promise.allSettled([
       scrapeGithubTrending(),
       scrapeHackerNews(),
-      scrapeArvix(),
+      scrapeArxiv(),
       scrapeDevTo(),
     ]);
 
