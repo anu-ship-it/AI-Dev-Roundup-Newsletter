@@ -37,6 +37,7 @@ async function main() {
       sent: false,
     })
       .sort({ relevanceScore: -1 })
+      .limit(12)
       .lean();
 
     console.log(`📥 Found ${items.length} unsent items for ${currentWeek}`);
