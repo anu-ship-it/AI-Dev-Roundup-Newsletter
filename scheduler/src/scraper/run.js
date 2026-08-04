@@ -11,7 +11,7 @@ const { connectDB, disconnectDB } = require("./db");
 const RawItem = require("./models/RawItem");
 const { scrapeGithubTrending } = require("./scrapers/githubTrending");
 const { scrapeHackerNews } = require("./scrapers/hackerNews");
-const { scrapeArvix } = require("./scrapers/Arxiv");
+const { scrapeArxiv } = require("./scrapers/Arxiv");
 const { scrapeDevTo } = require("./scrapers/Devto");
 
 async function saveItems(items) {
