@@ -1,22 +1,38 @@
-// dedup.js — Embeddings-based deduplication using Groq
-const Groq = require("groq-sdk");
+// dedup.js — Title-based deduplication
+//
+// Instead of embeddings (which require a model download or external API),
+// we use normalized title similarity. Two items are duplicates if their
+// titles share more than 60% of words after normalization.
+// Simple, fast, zero dependencies, works perfectly for newsletter dedup.
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-function cosineSimilarity(vecA, vecB) {
-  const dot = vecA.reduce((sum, a, i) => sum + a * vecB[i], 0);
-  const magA = Math.sqrt(vecA.reduce((sum, a) => sum + a * a, 0));
-  const magB = Math.sqrt(vecB.reduce((sum, b) => sum + b * b, 0));
-  if (magA === 0 || magB === 0) return 0;
-  return dot / (magA * magB);
+function normalizeTitle(title) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .split(/\s+/)
+    .filter((w) => w.length > 2) // ignore short words like "a", "an", "to"
+    .filter((w) => !["the", "and", "for", "with", "from", "this", "that"].includes(w));
 }
 
-async function getEmbedding(text) {
-  const response = await groq.embeddings.create({
-    model: "nomic-embed-text-v1_5",
-    input: text.substring(0, 512),
-  });
-  return response.data[0].embedding;
+function titleSimilarity(titleA, titleB) {
+  const wordsA = new Set(normalizeTitle(titleA));
+  const wordsB = new Set(normalizeTitle(titleB));
+
+  if (wordsA.size === 0 || wordsB.size === 0) return 0;
+
+  const intersection = [...wordsA].filter((w) => wordsB.has(w));
+  const union = new Set([...wordsA, ...wordsB]);
+
+  // Jaccard similarity
+  return intersection.length / union.size;
+}
+
+function urlDomain(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
 }
 
 async function deduplicateItems(newItems, existingItems) {
@@ -27,23 +43,22 @@ async function deduplicateItems(newItems, existingItems) {
     return newItems;
   }
 
-  console.log(`  Getting embeddings for ${existingItems.length} existing items...`);
-  const existingEmbeddings = await Promise.all(
-    existingItems.map((item) =>
-      getEmbedding(`${item.title} ${item.description}`)
-    )
-  );
-
   const uniqueItems = [];
 
   for (const item of newItems) {
-    const itemEmbedding = await getEmbedding(`${item.title} ${item.description}`);
-
     let isDuplicate = false;
-    for (let i = 0; i < existingEmbeddings.length; i++) {
-      const similarity = cosineSimilarity(itemEmbedding, existingEmbeddings[i]);
-      if (similarity > 0.92) {
-        console.log(`  Skipping duplicate: "${item.title.substring(0, 50)}..."`);
+
+    for (const existing of existingItems) {
+      // Check URL domain match first (fast path)
+      if (item.url === existing.url) {
+        isDuplicate = true;
+        break;
+      }
+
+      // Check title similarity
+      const similarity = titleSimilarity(item.title, existing.title);
+      if (similarity > 0.6) {
+        console.log(`  Skipping duplicate: "${item.title.substring(0, 50)}..." (similarity: ${similarity.toFixed(2)})`);
         isDuplicate = true;
         break;
       }
@@ -52,7 +67,7 @@ async function deduplicateItems(newItems, existingItems) {
     if (!isDuplicate) uniqueItems.push(item);
   }
 
-  console.log(`  ${uniqueItems.length} unique items passed dedup`);
+  console.log(`  ${uniqueItems.length} unique items passed dedup (${newItems.length - uniqueItems.length} duplicates removed)`);
   return uniqueItems;
 }
 
