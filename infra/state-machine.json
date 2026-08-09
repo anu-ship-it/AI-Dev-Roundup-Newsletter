@@ -1,0 +1,68 @@
+{
+  "Comment": "AI Dev Roundup weekly pipeline - scraper -> ai-pipeline -> email",
+  "StartAt": "RunScraper",
+  "States": {
+    "RunScraper": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::ecs:runTask.sync",
+      "Parameters": {
+        "Cluster": "arn:aws:ecs:ap-south-1:126458880561:cluster/ai-dev-roundup",
+        "TaskDefinition": "arn:aws:ecs:ap-south-1:126458880561:task-definition/ai-dev-roundup-scraper:2",
+        "LaunchType": "FARGATE",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "Subnets": ["subnet-054c6bea795de3bc4"],
+            "SecurityGroups": ["sg-0e23a83da9819795f"],
+            "AssignPublicIp": "ENABLED"
+          }
+        }
+      },
+      "Next": "RunPipeline",
+      "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "PipelineFailed"}]
+    },
+    "RunPipeline": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::ecs:runTask.sync",
+      "Parameters": {
+        "Cluster": "arn:aws:ecs:ap-south-1:126458880561:cluster/ai-dev-roundup",
+        "TaskDefinition": "arn:aws:ecs:ap-south-1:126458880561:task-definition/ai-dev-roundup-ai-pipeline:1",
+        "LaunchType": "FARGATE",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "Subnets": ["subnet-054c6bea795de3bc4"],
+            "SecurityGroups": ["sg-0e23a83da9819795f"],
+            "AssignPublicIp": "ENABLED"
+          }
+        }
+      },
+      "Next": "RunEmail",
+      "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "PipelineFailed"}]
+    },
+    "RunEmail": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::ecs:runTask.sync",
+      "Parameters": {
+        "Cluster": "arn:aws:ecs:ap-south-1:126458880561:cluster/ai-dev-roundup",
+        "TaskDefinition": "arn:aws:ecs:ap-south-1:126458880561:task-definition/ai-dev-roundup-email:1",
+        "LaunchType": "FARGATE",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "Subnets": ["subnet-054c6bea795de3bc4"],
+            "SecurityGroups": ["sg-0e23a83da9819795f"],
+            "AssignPublicIp": "ENABLED"
+          }
+        }
+      },
+      "Next": "PipelineSucceeded",
+      "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "PipelineFailed"}]
+    },
+    "PipelineSucceeded": {
+      "Type": "Succeed"
+    },
+    "PipelineFailed": {
+      "Type": "Fail",
+      "Error": "PipelineError",
+      "Cause": "One or more pipeline steps failed"
+    }
+  }
+}

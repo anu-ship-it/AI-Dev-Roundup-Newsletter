@@ -1,0 +1,7 @@
+[
+  {
+    "Id": "stepfunctions-target",
+    "Arn": "arn:aws:states:ap-south-1:126458880561:stateMachine:ai-dev-roundup-pipeline",
+    "RoleArn": "arn:aws:iam::126458880561:role/eventBridgeStepFunctionsRole"
+  }
+]
