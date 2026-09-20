@@ -45,4 +45,5 @@ const ProcessedItemSchema = new mongoose.Schema(
 ProcessedItemSchema.index({ newsletterEdition: 1 });
 ProcessedItemSchema.index({ sent: 1 });
 
-module.exports = mongoose.model("ProcessedItem", ProcessedItemSchema);
+module.exports = mongoose.models.ProcessedItem || 
+  mongoose.model("ProcessedItem", ProcessedItemSchema, "processeditems");
