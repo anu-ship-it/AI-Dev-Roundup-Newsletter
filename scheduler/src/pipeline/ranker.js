@@ -33,14 +33,13 @@ ${item.metadata?.starsToday ? `Stars today: ${item.metadata.starsToday}` : ""}
 
   try {
     const response = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-20b",
       max_tokens: 100,
       temperature: 0.1,
       messages: [
         { role: "system", content: SCORING_PROMPT },
         { role: "user", content: itemDescription },
       ],
-      response_format: { type: "json_object" },
     });
 
     const result = JSON.parse(response.choices[0].message.content);
