@@ -38,7 +38,7 @@ async function runPipeline() {
       console.log(`  Auto-corrected ${reassigned.modifiedCount} items from old weeks to ${currentWeek}`);
     }
 
-    const rawItems = await RawItem.find({ processed: false }).lean();
+    const rawItems = await RawItem.find({ processed: false }).limit(50).lean();
     console.log(`Found ${rawItems.length} unprocessed items`);
 
     if (rawItems.length === 0) {
