@@ -1,4 +1,4 @@
-// pipeline/run.js — Wraps AI pipeline logic as an async function
+// pipeline/run.js — AI pipeline with self-correcting week assignment
 
 require("dotenv").config();
 
@@ -27,11 +27,22 @@ async function runPipeline() {
     const currentWeek = getCurrentWeek();
     console.log(`Processing for week: ${currentWeek}`);
 
+    // Self-correction: reassign any unsent items from old weeks to current week
+    // This handles edge cases where items were processed in a previous week
+    // but never sent due to errors
+    const reassigned = await ProcessedItem.updateMany(
+      { sent: false, newsletterEdition: { $ne: currentWeek } },
+      { $set: { newsletterEdition: currentWeek } }
+    );
+    if (reassigned.modifiedCount > 0) {
+      console.log(`  Auto-corrected ${reassigned.modifiedCount} items from old weeks to ${currentWeek}`);
+    }
+
     const rawItems = await RawItem.find({ processed: false }).lean();
     console.log(`Found ${rawItems.length} unprocessed items`);
 
     if (rawItems.length === 0) {
-      console.log("Nothing to process.");
+      console.log("Nothing new to process.");
       return;
     }
 
@@ -86,7 +97,7 @@ async function runPipeline() {
       { processed: true }
     );
 
-    console.log(`Saved ${summarizedItems.length} processed items`);
+    console.log(`Saved ${summarizedItems.length} processed items for ${currentWeek}`);
   } finally {
     await disconnectDB();
   }
