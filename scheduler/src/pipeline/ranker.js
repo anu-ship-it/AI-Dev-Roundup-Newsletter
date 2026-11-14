@@ -1,20 +1,19 @@
-// ranker.js — Relevance scoring with automatic model fallback
-//
-// Tries models in order — if one is deprecated, moves to the next.
-// No manual intervention needed when Groq updates their model lineup.
+// ============================================================
+// FILE:    scheduler/src/pipeline/ranker.js
+// STAGE:   STAGE 2 of 3 - AI PIPELINE
+// ACTION:  REPLACE the existing scheduler/src/pipeline/ranker.js
+// PURPOSE: Scores items 1-10 and reports which items got a real verdict.
+// NOTE:    Imports ./llm.js (new file above).
+// ============================================================
 
-const Groq = require("groq-sdk");
+// ranker.js — relevance scoring.
+// Returns which items got a REAL verdict (evaluatedIds). Items whose scoring failed
+// are NOT in that list, so the caller leaves them queued instead of discarding them.
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-const MIN_SCORE = parseInt(process.env.MIN_RELEVANCE_SCORE) || 7;
+const { chat } = require("./llm");
 
-// Models tried in order — update this list when Groq adds new ones
-const GROQ_MODELS = [
-  "openai/gpt-oss-20b",
-  "openai/gpt-oss-120b",
-  "llama-3.3-70b-versatile",
-  "llama-3.1-8b-instant",
-];
+const MIN_SCORE = parseInt(process.env.MIN_RELEVANCE_SCORE, 10) || 7;
+const MAX_CONSECUTIVE_FAILURES = 5;
 
 const SCORING_PROMPT = `You are an expert curator for a weekly newsletter aimed at software engineers and founders building AI-powered products.
 
@@ -30,73 +29,68 @@ Scoring rubric:
 Respond ONLY with a valid JSON object, no markdown, no extra text:
 {"score": <number 1-10>, "reason": "<one sentence explaining the score>"}`;
 
-async function callGroq(userContent, maxTokens = 100) {
-  for (const model of GROQ_MODELS) {
-    try {
-      const response = await groq.chat.completions.create({
-        model,
-        max_tokens: maxTokens,
-        temperature: 0.1,
-        messages: [
-          { role: "system", content: SCORING_PROMPT },
-          { role: "user", content: userContent },
-        ],
-      });
-      return response.choices[0].message.content;
-    } catch (err) {
-      if (
-        err.message.includes("model_not_found") ||
-        err.message.includes("does not exist") ||
-        err.message.includes("404")
-      ) {
-        console.warn(`  Model ${model} unavailable, trying next...`);
-        continue;
-      }
-      throw err;
-    }
-  }
-  throw new Error("All Groq models failed");
+function parseJson(text) {
+  const cleaned = text.replace(/```json|```/g, "");
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error(`no JSON object in model output: ${text.slice(0, 120)}`);
+  return JSON.parse(match[0]);
 }
 
 async function scoreItem(item) {
-  const itemDescription = `
-Title: ${item.title}
-Description: ${item.description || "No description"}
-Source: ${item.source}
-${item.metadata?.language ? `Language: ${item.metadata.language}` : ""}
-${item.metadata?.starsToday ? `Stars today: ${item.metadata.starsToday}` : ""}
-`.trim();
+  const user = [
+    `Title: ${item.title}`,
+    `Description: ${item.description || "No description"}`,
+    `Source: ${item.source}`,
+    item.metadata && item.metadata.language ? `Language: ${item.metadata.language}` : "",
+    item.metadata && item.metadata.starsToday ? `Stars today: ${item.metadata.starsToday}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
-  try {
-    const text = await callGroq(itemDescription);
-    // Strip markdown fences if model returns them
-    const clean = text.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(clean);
-    return { score: parsed.score, reason: parsed.reason };
-  } catch (err) {
-    console.warn(`  Scoring failed for "${item.title}": ${err.message}`);
-    return { score: 0, reason: "Scoring failed" };
-  }
+  const text = await chat({ system: SCORING_PROMPT, user, maxTokens: 600, temperature: 0 });
+  const parsed = parseJson(text);
+  const score = Number(parsed.score);
+  if (!Number.isFinite(score)) throw new Error("model output has no numeric score");
+  return { score: Math.min(10, Math.max(0, score)), reason: String(parsed.reason || "") };
 }
 
 async function rankItems(items) {
   console.log(`\nRanking: scoring ${items.length} items...`);
 
-  const scoredItems = [];
+  const passed = [];
+  const evaluatedIds = [];
+  let failed = 0;
+  let consecutive = 0;
+  let lastError = null;
+  let aborted = false;
 
   for (const item of items) {
-    const { score, reason } = await scoreItem(item);
-    console.log(`  ${score >= MIN_SCORE ? "✅" : "❌"} Score ${score}/10 — ${item.title.substring(0, 50)}...`);
-    console.log(`     Reason: ${reason}`);
-
-    if (score >= MIN_SCORE) {
-      scoredItems.push({ ...item, relevanceScore: score });
+    try {
+      const { score, reason } = await scoreItem(item);
+      consecutive = 0;
+      evaluatedIds.push(item._id);
+      const ok = score >= MIN_SCORE;
+      console.log(`  ${ok ? "PASS" : "skip"} ${score}/10 - ${item.title.slice(0, 70)}`);
+      if (ok) passed.push({ ...item, relevanceScore: score, scoreReason: reason });
+    } catch (err) {
+      failed++;
+      consecutive++;
+      lastError = err.message;
+      console.warn(`  FAILED to score "${item.title.slice(0, 70)}": ${err.message}`);
+      if (consecutive >= MAX_CONSECUTIVE_FAILURES) {
+        aborted = true;
+        console.error(`  Aborting ranking after ${consecutive} consecutive failures`);
+        break;
+      }
     }
   }
 
-  scoredItems.sort((a, b) => b.relevanceScore - a.relevanceScore);
-  console.log(`\n  ✅ ${scoredItems.length} items passed ranking (minimum score: ${MIN_SCORE})`);
-  return scoredItems;
+  passed.sort((a, b) => b.relevanceScore - a.relevanceScore);
+  console.log(
+    `\n  Ranking done: ${passed.length} passed (min ${MIN_SCORE}), ` +
+      `${evaluatedIds.length} evaluated, ${failed} failed`
+  );
+  return { passed, evaluatedIds, failed, aborted, lastError };
 }
 
 module.exports = { rankItems };

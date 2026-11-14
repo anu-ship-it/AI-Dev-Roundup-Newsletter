@@ -1,68 +1,57 @@
-// scheduler/src/index.js — Master orchestrator
-//
-// Runs the full pipeline in sequence:
-// 1. Scraper — pulls GitHub Trending into MongoDB
-// 2. AI Pipeline — dedup, rank, summarize
-// 3. Email — sends newsletter to all subscribers
-//
-// Each step is imported directly — no child processes.
-// If any step fails, the pipeline stops and logs the error.
+// ============================================================
+// FILE:    scheduler/src/index.js
+// STAGE:   ALL STAGES - entry point (runs scrape / pipeline / email / verify)
+// ACTION:  REPLACE the existing scheduler/src/index.js
+// PURPOSE: Runs one stage by name so Step Functions can use a single image for every stage.
+// NOTE:    Do not edit anything else in scheduler/src for this file to work.
+// ============================================================
+
+// index.js — stage runner.
+//   node src/index.js scrape | pipeline | email | verify | all
+// Step Functions runs this SAME image three times with a different stage each time,
+// so there is exactly one copy of the code to maintain and deploy.
+// Exit code 0 = stage succeeded. Anything else = stage failed (and alerts fire).
 
 require("dotenv").config();
 
-const { runScraper } = require("./scraper/run");
-const { runPipeline } = require("./pipeline/run");
-const { runEmail } = require("./email/run");
+const stages = {
+  scrape: () => require("./scraper/run").runScraper(),
+  pipeline: () => require("./pipeline/run").runPipeline(),
+  email: () => require("./email/run").runEmail(),
+  verify: () => require("./verify/run").runVerify(),
+};
 
-function log(msg) {
-  const ts = new Date().toISOString();
-  console.log(`[${ts}] ${msg}`);
-}
+const log = (m) => console.log(`[${new Date().toISOString()}] ${m}`);
+
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled rejection:", err);
+  process.exit(1);
+});
 
 async function main() {
-  const start = Date.now();
+  const requested = (process.argv[2] || process.env.STAGE || "all").toLowerCase();
+  const plan = requested === "all" ? ["scrape", "pipeline", "email"] : [requested];
 
-  log("═══════════════════════════════════════════");
-  log("AI Dev Roundup — Weekly Pipeline Starting");
-  log("═══════════════════════════════════════════");
-
-  // Step 1: Scraper
-  log("STEP 1: Starting scraper...");
-  try {
-    await runScraper();
-    log("STEP 1: Scraper completed");
-  } catch (err) {
-    log(`STEP 1 FAILED: ${err.message}`);
-    log("Pipeline stopped — scraper failed");
-    process.exit(1);
+  const unknown = plan.find((s) => !stages[s]);
+  if (unknown) {
+    console.error(`Unknown stage "${unknown}". Use: ${Object.keys(stages).join(", ")}, all`);
+    process.exit(2);
   }
 
-  // Step 2: AI Pipeline
-  log("STEP 2: Starting AI pipeline...");
-  try {
-    await runPipeline();
-    log("STEP 2: AI pipeline completed");
-  } catch (err) {
-    log(`STEP 2 FAILED: ${err.message}`);
-    log("Pipeline stopped — AI pipeline failed");
-    process.exit(1);
+  const started = Date.now();
+  for (const name of plan) {
+    log(`STAGE ${name}: start`);
+    try {
+      await stages[name]();
+      log(`STAGE ${name}: ok`);
+    } catch (err) {
+      log(`STAGE ${name}: FAILED - ${err.message}`);
+      console.error(err.stack);
+      process.exit(1);
+    }
   }
-
-  // Step 3: Email
-  log("STEP 3: Starting email service...");
-  try {
-    await runEmail();
-    log("STEP 3: Email service completed");
-  } catch (err) {
-    log(`STEP 3 FAILED: ${err.message}`);
-    log("Pipeline stopped — email service failed");
-    process.exit(1);
-  }
-
-  const duration = ((Date.now() - start) / 1000).toFixed(1);
-  log("═══════════════════════════════════════════");
-  log(`Pipeline complete in ${duration}s`);
-  log("═══════════════════════════════════════════");
+  log(`Done in ${((Date.now() - started) / 1000).toFixed(1)}s`);
+  process.exit(0);
 }
 
 main();

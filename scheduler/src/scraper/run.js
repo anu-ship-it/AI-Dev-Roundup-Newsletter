@@ -1,71 +1,65 @@
-// scraper/run.js — Wraps scraper logic as an async function
-//
-// The original scraper/index.js calls main() directly.
-// This wrapper exports it as runScraper() so the orchestrator
-// can await it and handle errors properly.
+// ============================================================
+// FILE:    scheduler/src/scraper/run.js
+// STAGE:   STAGE 1 of 3 - SCRAPER
+// ACTION:  REPLACE the existing scheduler/src/scraper/run.js
+// PURPOSE: Runs the 4 sources; one bad source degrades, zero items fails the stage.
+// NOTE:    Depends on existing files (leave them alone): ./db.js, ./models/RawItem.js, ./scrapers/*.js
+// ============================================================
+
+// scraper/run.js — runs all sources; one bad source degrades, zero items fails.
 
 require("dotenv").config();
 
-const mongoose = require("mongoose");
 const { connectDB, disconnectDB } = require("./db");
 const RawItem = require("./models/RawItem");
 const { scrapeGithubTrending } = require("./scrapers/githubTrending");
 const { scrapeHackerNews } = require("./scrapers/hackerNews");
-const { scrapeArxiv } = require("./scrapers/Arxiv");
-const { scrapeDevTo } = require("./scrapers/Devto");
+const { scrapeArxiv } = require("./scrapers/arxiv");
+const { scrapeDevTo } = require("./scrapers/devto");
 
-async function saveItems(items) {
-  let saved = 0;
-  let skipped = 0;
-
-  for (const item of items) {
-    try {
-      const result = await RawItem.updateOne(
-        { url: item.url },
-        { $setOnInsert: item },
-        { upsert: true }
-      );
-      if (result.upsertedCount === 1) saved++;
-      else skipped++;
-    } catch (err) {
-      console.error(`❌ Failed to save item: ${item.url}`, err.message);
-    }
-  }
-
-  return { saved, skipped };
-}
+const SOURCES = [
+  ["github", scrapeGithubTrending],
+  ["hackernews", scrapeHackerNews],
+  ["arxiv", scrapeArxiv],
+  ["devto", scrapeDevTo],
+];
 
 async function runScraper() {
-  console.log("\n🚀 Starting AI Dev Roundup Scraper...");
-
+  console.log("\nStarting scraper...");
   await connectDB();
 
   try {
-   const [github, hn, arvix, devto] = await Promise.allSettled([
-      scrapeGithubTrending(),
-      scrapeHackerNews(),
-      scrapeArxiv(),
-      scrapeDevTo(),
-    ]);
+    const results = await Promise.allSettled(SOURCES.map(([, fn]) => fn()));
+    const items = [];
+    const failures = [];
 
-    const allItems = [
-      ...(github.status === "fulfilled" ? github.value : []),
-      ...(hn.status === "fulfilled" ? hn.value : []),
-      ...(arvix.status === "fulfilled" ? arvix.value : []),
-      ...(devto.status === "fulfilled" ? devto.value : []),
-    ];
+    results.forEach((r, i) => {
+      const name = SOURCES[i][0];
+      if (r.status === "fulfilled") {
+        items.push(...r.value);
+      } else {
+        failures.push(name);
+        console.error(`  Source "${name}" failed: ${(r.reason && r.reason.message) || r.reason}`);
+      }
+    });
 
-    if (github.status === "rejected") console.error("GitHub scraper failed:", github.reason?.message);
-    if (hn.status === "rejected") console.error("HN scraper failed:", hn.reason?.message);
-    if (arvix.status === "rejected") console.error("arViv scraper failed:", arvix.reason?.message);
-    if (devto.status === "rejected") console.error("Dev.to scraper failed:", devto.reason?.message);
+    console.log(`Scraped ${items.length} items (${SOURCES.length - failures.length}/${SOURCES.length} sources ok)`);
+    if (items.length === 0) {
+      throw new Error(`Every source failed or returned nothing (failed: ${failures.join(", ") || "none"})`);
+    }
 
-    console.log(`📦 Total items scraped: ${allItems.length}`);
-
-    const { saved, skipped } = await saveItems(allItems);
-
-    console.log(`New items saved: ${saved}`);
-    console.log(`Duplicates skipped: ${skipped}`);
+    let saved = 0;
+    let skipped = 0;
+    for (const item of items) {
+      try {
+        const res = await RawItem.updateOne({ url: item.url }, { $setOnInsert: item }, { upsert: true });
+        if (res.upsertedCount === 1) saved++;
+        else skipped++;
+      } catch (err) {
+        console.error(`  Failed to save ${item.url}: ${err.message}`);
+      }
+    }
+    console.log(`New items saved: ${saved}, duplicates skipped: ${skipped}`);
   } finally {
     await disconnectDB();
   }
