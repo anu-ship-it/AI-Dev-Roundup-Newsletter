@@ -1,0 +1,20 @@
+[
+  {
+    "Id": "verify-target",
+    "Arn": "arn:aws:ecs:ap-south-1:126458880561:cluster/ai-dev-roundup",
+    "RoleArn": "arn:aws:iam::126458880561:role/eventBridgeECSRole",
+    "Input": "{\"containerOverrides\":[{\"name\":\"scheduler\",\"command\":[\"node\",\"src/index.js\",\"verify\"]}]}",
+    "EcsParameters": {
+      "TaskDefinitionArn": "arn:aws:ecs:ap-south-1:126458880561:task-definition/ai-dev-roundup-scheduler",
+      "TaskCount": 1,
+      "LaunchType": "FARGATE",
+      "NetworkConfiguration": {
+        "awsvpcConfiguration": {
+          "Subnets": ["subnet-054c6bea795de3bc4"],
+          "SecurityGroups": ["sg-0e23a83da9819795f"],
+          "AssignPublicIp": "ENABLED"
+        }
+      }
+    }
+  }
+]

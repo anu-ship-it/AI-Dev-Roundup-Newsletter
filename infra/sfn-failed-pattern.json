@@ -1,0 +1,8 @@
+{
+  "source": ["aws.states"],
+  "detail-type": ["Step Functions Execution Status Change"],
+  "detail": {
+    "stateMachineArn": ["arn:aws:states:ap-south-1:126458880561:stateMachine:ai-dev-roundup-pipeline"],
+    "status": ["FAILED", "TIMED_OUT", "ABORTED"]
+  }
+}

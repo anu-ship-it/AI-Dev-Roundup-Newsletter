@@ -1,0 +1,9 @@
+{
+  "source": ["aws.ecs"],
+  "detail-type": ["ECS Task State Change"],
+  "detail": {
+    "clusterArn": ["arn:aws:ecs:ap-south-1:126458880561:cluster/ai-dev-roundup"],
+    "lastStatus": ["STOPPED"],
+    "containers": { "exitCode": [{ "anything-but": 0 }] }
+  }
+}

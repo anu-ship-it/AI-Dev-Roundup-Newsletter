@@ -1,13 +1,14 @@
 {
-  "Comment": "AI Dev Roundup weekly pipeline - scraper -> ai-pipeline -> email",
+  "Comment": "FILE: infra/state-machine.json. Weekly pipeline: scrape -> pipeline -> email. One image, three stages; each stage is idempotent so retry is safe.",
   "StartAt": "RunScraper",
   "States": {
     "RunScraper": {
       "Type": "Task",
       "Resource": "arn:aws:states:::ecs:runTask.sync",
+      "TimeoutSeconds": 900,
       "Parameters": {
         "Cluster": "arn:aws:ecs:ap-south-1:126458880561:cluster/ai-dev-roundup",
-        "TaskDefinition": "arn:aws:ecs:ap-south-1:126458880561:task-definition/ai-dev-roundup-scraper:2",
+        "TaskDefinition": "ai-dev-roundup-scheduler",
         "LaunchType": "FARGATE",
         "NetworkConfiguration": {
           "AwsvpcConfiguration": {
@@ -15,17 +16,24 @@
             "SecurityGroups": ["sg-0e23a83da9819795f"],
             "AssignPublicIp": "ENABLED"
           }
+        },
+        "Overrides": {
+          "ContainerOverrides": [
+            { "Name": "scheduler", "Command": ["node", "src/index.js", "scrape"] }
+          ]
         }
       },
-      "Next": "RunPipeline",
-      "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "PipelineFailed"}]
+      "Retry": [{ "ErrorEquals": ["States.TaskFailed"], "IntervalSeconds": 120, "MaxAttempts": 1, "BackoffRate": 2 }],
+      "Catch": [{ "ErrorEquals": ["States.ALL"], "Next": "PipelineFailed" }],
+      "Next": "RunPipeline"
     },
     "RunPipeline": {
       "Type": "Task",
       "Resource": "arn:aws:states:::ecs:runTask.sync",
+      "TimeoutSeconds": 2400,
       "Parameters": {
         "Cluster": "arn:aws:ecs:ap-south-1:126458880561:cluster/ai-dev-roundup",
-        "TaskDefinition": "arn:aws:ecs:ap-south-1:126458880561:task-definition/ai-dev-roundup-ai-pipeline:1",
+        "TaskDefinition": "ai-dev-roundup-scheduler",
         "LaunchType": "FARGATE",
         "NetworkConfiguration": {
           "AwsvpcConfiguration": {
@@ -33,17 +41,24 @@
             "SecurityGroups": ["sg-0e23a83da9819795f"],
             "AssignPublicIp": "ENABLED"
           }
+        },
+        "Overrides": {
+          "ContainerOverrides": [
+            { "Name": "scheduler", "Command": ["node", "src/index.js", "pipeline"] }
+          ]
         }
       },
-      "Next": "RunEmail",
-      "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "PipelineFailed"}]
+      "Retry": [{ "ErrorEquals": ["States.TaskFailed"], "IntervalSeconds": 120, "MaxAttempts": 1, "BackoffRate": 2 }],
+      "Catch": [{ "ErrorEquals": ["States.ALL"], "Next": "PipelineFailed" }],
+      "Next": "RunEmail"
     },
     "RunEmail": {
       "Type": "Task",
       "Resource": "arn:aws:states:::ecs:runTask.sync",
+      "TimeoutSeconds": 900,
       "Parameters": {
         "Cluster": "arn:aws:ecs:ap-south-1:126458880561:cluster/ai-dev-roundup",
-        "TaskDefinition": "arn:aws:ecs:ap-south-1:126458880561:task-definition/ai-dev-roundup-email:1",
+        "TaskDefinition": "ai-dev-roundup-scheduler",
         "LaunchType": "FARGATE",
         "NetworkConfiguration": {
           "AwsvpcConfiguration": {
@@ -51,18 +66,22 @@
             "SecurityGroups": ["sg-0e23a83da9819795f"],
             "AssignPublicIp": "ENABLED"
           }
+        },
+        "Overrides": {
+          "ContainerOverrides": [
+            { "Name": "scheduler", "Command": ["node", "src/index.js", "email"] }
+          ]
         }
       },
-      "Next": "PipelineSucceeded",
-      "Catch": [{"ErrorEquals": ["States.ALL"], "Next": "PipelineFailed"}]
+      "Retry": [{ "ErrorEquals": ["States.TaskFailed"], "IntervalSeconds": 120, "MaxAttempts": 1, "BackoffRate": 2 }],
+      "Catch": [{ "ErrorEquals": ["States.ALL"], "Next": "PipelineFailed" }],
+      "Next": "PipelineSucceeded"
     },
-    "PipelineSucceeded": {
-      "Type": "Succeed"
-    },
+    "PipelineSucceeded": { "Type": "Succeed" },
     "PipelineFailed": {
       "Type": "Fail",
       "Error": "PipelineError",
-      "Cause": "One or more pipeline steps failed"
+      "Cause": "A pipeline stage failed after retry. See the /ecs/ai-dev-roundup log group."
     }
   }
 }
